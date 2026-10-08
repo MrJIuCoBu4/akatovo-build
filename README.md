@@ -1,0 +1,9 @@
+# У леса — интерактивный план
+
+Buildless static app. Entry point: `dist/index.html`. No external dependencies, analytics, or network requests in the application. Hosted with owner-only Sites access.
+
+Source basis: boundary diagram with segmented edge lengths and 1 m / 3 m setback guides; sketch general plan **ГП-01 / РЕВ. 03** dated 5 October 2026; compass screenshot (215° SW) with address Московская обл., г. Клин, д. Акатово, владение 200, строение Акатово парк тер. and coordinates 56°05′54″ N / 36°35′42″ E; site photos and videos from 3–7 October 2026 (cleared pad, forest edge fence, access culvert/drainage, utility poles). Polygon digitized from drawing, not surveyed. Default placement is the forest-side sketch.
+
+`geometry.js` handles rotated footprints, all object positions/sizes, collisions, editable paths, automatic routing, and functional zone overlays. `solar.js` implements approximate NOAA fractional-year solar geometry at the compass-photo location (56.098333 N, 36.595 E), using Moscow UTC+3 independently of the browser timezone. `scene.js` renders the SVG scene, selected-object controls, paths, sun direction, and projected box/forest-strip shadows. `app.js` handles all editing, persistence, comparison and exports. Version 1 browser data and JSON migrate to version 2 without dropping saved variants. Shadows assume flat ground, specified box heights, and a uniform forest strip; no measured crown geometry, clouds, or relief. Facade-facing hours are directional, not an insolation certification. Local variants remain in browser localStorage, with JSON portability.
+
+Run `npm run check`. Browser QA is unavailable in this managed environment; use the native deployment result for hosting verification. Setbacks, contours, routes, tree positions and parking remain conceptual. No regulatory compliance is asserted.

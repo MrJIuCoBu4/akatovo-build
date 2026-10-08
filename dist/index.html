@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#1e3229"><meta name="robots" content="noindex,nofollow">
+  <meta name="description" content="Редактор проектирования участка у леса. Зоны, объекты, свет и тени.">
+  <title>У леса — редактор участка</title>
+  <link rel="stylesheet" href="styles.css?v=16">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    }
+  }
+  </script>
+  <script type="module" src="app.js?v=16"></script>
+</head>
+<body class="studio">
+  <header class="top-bar site-header">
+    <a class="brand" href="./" aria-label="У леса, главная"><svg width="28" height="28" viewBox="0 0 35 35" aria-hidden="true"><path d="M17.5 3 5 21h7l-5 7h21l-5-7h7Z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M17.5 27v6" stroke="currentColor" stroke-width="1.8"/></svg><span>У леса<small>РЕДАКТОР УЧАСТКА</small></span></a>
+    <div class="workspace-tabs" role="tablist" aria-label="Разделы плана">
+      <button role="tab" id="tab-editor" aria-controls="panel-editor" aria-selected="true" data-tab="editor">План</button>
+      <button role="tab" id="tab-compare" aria-controls="panel-compare" aria-selected="false" data-tab="compare">Варианты</button>
+      <button role="tab" id="tab-sources" aria-controls="panel-sources" aria-selected="false" data-tab="sources">Данные</button>
+    </div>
+    <div class="header-info">
+      <span class="private-badge"><span aria-hidden="true">▣</span> Приватный</span>
+      <span class="header-date">750 м²</span>
+      <span class="save-state" id="save-state">Сохраняется в этом браузере</span>
+    </div>
+    <button class="button light compact" id="export-svg"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M5 16v5h14v-5"/></svg>SVG</button>
+  </header>
+
+  <main>
+    <section id="panel-editor" role="tabpanel" aria-labelledby="tab-editor" class="editor-panel">
+      <div class="app-shell workspace">
+        <aside class="left-rail" aria-label="Инструменты и слои">
+          <div class="rail-section">
+            <p class="rail-label">Инструменты</p>
+            <div class="tool-group rail-tools">
+              <button id="tool-select" aria-pressed="true">↖ Выбор</button>
+              <button id="tool-path" aria-pressed="false">⌁ Дорожка</button>
+            </div>
+            <p class="rail-hint" id="tool-hint">Выбери объект и перетащи</p>
+          </div>
+
+          <div class="rail-section">
+            <p class="rail-label">Объекты</p>
+            <div class="object-picker rail-objects">
+              <button id="pick-house" data-select="house" aria-pressed="true"><span>⌂</span><strong>Дом</strong><small>Модерн 80</small></button>
+              <button id="pick-shed" data-select="shed" aria-pressed="false"><span>▤</span><strong>Бытовка</strong><small>6 × 2,4 м</small></button>
+              <button id="pick-parking" data-select="parking" aria-pressed="false"><span>▱</span><strong>Парковка</strong><small>2 машины</small></button>
+              <button id="pick-path" data-select="path" aria-pressed="false"><span>⌁</span><strong>Дорожка</strong><small id="path-picker-width">1,4 м</small></button>
+            </div>
+          </div>
+
+          <div class="rail-section">
+            <p class="rail-label">Зоны и слои</p>
+            <div id="zone-list" class="zone-list" aria-live="polite"></div>
+            <div class="layers rail-layers">
+              <label class="toggle-row"><span>Зоны на плане</span><input id="show-zones" type="checkbox" checked></label>
+              <label class="toggle-row"><span>Стороны света</span><input id="show-compass" type="checkbox" checked></label>
+              <label class="toggle-row"><span>Размеры</span><input id="show-dimensions" type="checkbox" checked></label>
+              <label class="toggle-row"><span>План Модерн 80</span><input id="show-floor" type="checkbox"></label>
+              <label class="toggle-row"><span>Варианты дома</span><input id="show-ghosts" type="checkbox"></label>
+              <label class="toggle-row"><span>Буфер границ</span><input id="show-buffer" type="checkbox" checked></label>
+            </div>
+            <div class="buffer-control">
+              <label for="buffer">Буфер <output id="buffer-output">3 м</output></label>
+              <input id="buffer" type="range" min="0" max="8" step="0.5" value="3">
+            </div>
+          </div>
+
+          <div class="rail-section rail-presets">
+            <div class="presets-header"><div><p class="eyebrow">Старт</p><h2>Варианты дома</h2></div><button class="text-button" data-go="compare">Все ↗</button></div>
+            <div class="preset-grid" id="presets"></div>
+          </div>
+        </aside>
+
+        <div class="plan-column plan-stage">
+          <div class="map-toolbar">
+            <div><span class="tiny-label">ТЕКУЩИЙ ВАРИАНТ</span><strong id="active-name">У леса</strong></div>
+            <div class="map-actions">
+              <div class="view-toggle" role="group" aria-label="Режим вида">
+                <button type="button" id="view-2d" class="view-btn" aria-pressed="true">Сверху</button>
+                <button type="button" id="view-3d" class="view-btn" aria-pressed="false">3D</button>
+              </div>
+              <button class="icon-button" id="undo" aria-label="Отменить изменение" title="Отменить">↶</button>
+              <button class="icon-button" id="redo" aria-label="Повторить изменение" title="Повторить">↷</button>
+              <span class="divider"></span>
+              <button class="button light compact" id="fit">Весь участок</button>
+              <button class="sun-toggle" id="sun-toggle" aria-pressed="true">☀ Солнце</button>
+            </div>
+          </div>
+          <div class="editor-toolbar">
+            <span class="orientation-chip"><span class="sun-symbol">☀</span> Акатово парк · лес ЮЗ · 215°</span>
+            <span class="map-mode-label" id="map-mode-label">ЭСКИЗ · ВИД СВЕРХУ</span>
+          </div>
+          <div class="draw-toolbar" id="draw-toolbar" hidden>
+            <span id="draw-status">Кликай на плане, чтобы проложить дорожку</span>
+            <button id="draw-back">Отменить точку</button>
+            <button id="draw-cancel">Отмена</button>
+            <button id="draw-finish">Готово ✓</button>
+          </div>
+          <div class="map-wrap" id="map-wrap">
+            <svg id="plan" tabindex="0" xmlns="http://www.w3.org/2000/svg" viewBox="-6.5 -5.5 51 32" role="img" aria-label="Редактор участка. Дом, бытовку и парковку можно двигать и поворачивать. Дорожка редактируется точками."></svg>
+            <div id="view3d" class="view3d" hidden aria-hidden="true"></div>
+            <button id="selected-badge" class="selected-badge">Дом · настроить ↗</button>
+            <div class="map-corner">750 м² · модель</div>
+            <div class="map-zoom">
+              <button id="zoom-out" aria-label="Уменьшить план">−</button>
+              <span id="zoom-label">100%</span>
+              <button id="zoom-in" aria-label="Увеличить план">+</button>
+            </div>
+          </div>
+          <div class="map-footer">
+            <div class="legend">
+              <span><i class="swatch house"></i>Дом</span>
+              <span><i class="swatch terrace"></i>Терраса</span>
+              <span><i class="swatch buffer"></i>Буфер</span>
+              <span><i class="swatch route"></i>Дорожка</span>
+              <span><i class="swatch shadow"></i>Тень</span>
+              <span><i class="swatch zone"></i>Зоны</span>
+            </div>
+            <span class="map-hint" id="map-hint">Выбор · перетаскивание · круг — поворот</span>
+          </div>
+
+          <section class="solar-card" id="solar-card" aria-label="Солнце и тени">
+            <div class="solar-heading">
+              <div class="solar-title"><span>☀</span><div><p class="eyebrow">СОЛНЦЕ</p><h2 id="solar-headline">Откуда приходит свет</h2></div></div>
+              <span class="solar-time-large" id="solar-time-label">16:00 <small>МСК</small></span>
+            </div>
+            <div class="solar-date-row">
+              <div class="season-buttons">
+                <button data-season="summer">Лето</button>
+                <button data-season="spring">Весна</button>
+                <button data-season="winter">Зима</button>
+                <button data-season="today">Сегодня</button>
+              </div>
+              <input id="solar-date" type="date" min="2000-01-01" max="2099-12-31" value="2026-06-21" aria-label="Дата для расчёта солнца">
+            </div>
+            <div class="solar-timeline" id="solar-timeline"></div>
+            <div class="solar-scrubber">
+              <button id="solar-play" aria-label="Показать движение солнца за день">▶</button>
+              <input id="solar-time" type="range" min="0" max="1435" step="5" value="960" aria-label="Время суток по Москве">
+              <input id="solar-clock" type="time" step="300" value="16:00" aria-label="Точное время по Москве">
+            </div>
+            <div class="solar-facts" id="solar-facts"></div>
+            <div class="solar-meaning" id="solar-meaning"></div>
+            <details class="solar-assumptions">
+              <summary>Как понимать свет и тени</summary>
+              <p>Золотая стрелка показывает, откуда идут лучи. Тень лежит в противоположную сторону. Шкала показывает высоту солнца в течение выбранного дня.</p>
+              <p>Расчёт для Московская обл., г. Клин, д. Акатово, владение 200, строение Акатово парк тер.: 56°05′54″ С · 36°35′42″ В (56,098333° / 36,595°), время МСК. Дом — 2,7 м, высоту бытовки можно менять. Лес — сплошная полоса у левой границы по фото и компасу 215°; кроны и рельеф не измерены.</p>
+              <div class="solar-toggles">
+                <label><input id="solar-shadows" type="checkbox" checked> Тени зданий</label>
+                <label><input id="solar-forest" type="checkbox" checked> Тень леса</label>
+              </div>
+              <label class="tree-height-control">Высота леса, м <input id="tree-height" type="range" min="0" max="40" step="1" value="20"><output id="tree-height-output">20</output></label>
+              <p>Облачность, рельеф и форма крон не учитываются. «Перед фасадом» означает направление света, а не фактическую длительность инсоляции. <a href="https://gml.noaa.gov/grad/solcalc/solareqns.PDF" target="_blank" rel="noopener noreferrer">Метод расчёта ↗</a></p>
+            </details>
+          </section>
+        </div>
+
+        <aside class="inspector" id="inspector" aria-label="Свойства выбранного объекта">
+          <div class="inspector-heading">
+            <div><p class="eyebrow">ИНСПЕКТОР</p><h2>Свойства</h2></div>
+            <span class="inspector-count">04</span>
+          </div>
+
+          <div class="object-editor" id="object-editor">
+            <div class="selected-object-heading">
+              <span id="object-number">01</span>
+              <div><p class="eyebrow">ВЫБРАННЫЙ ОБЪЕКТ</p><h2 id="object-title">Модерн 80</h2></div>
+              <span id="object-area" class="area-chip">80 м²</span>
+            </div>
+            <p id="object-description" class="object-description">60 м² жилой объём + 20 м² терраса</p>
+            <div class="rotation-top"><label for="angle">Поворот</label><label class="angle-exact" for="angle-deg"><input id="angle-deg" type="number" min="-180" max="180" step="1" value="0" inputmode="numeric">°</label></div>
+            <input id="angle" type="range" min="-180" max="180" step="1" value="0" aria-label="Поворот, градусы">
+            <div class="rotate-buttons">
+              <button data-rotate="-45" title="Точный сдвиг на −45°">↶ 45°</button>
+              <button data-rotate="45" title="Точный сдвиг на +45°">45° ↷</button>
+              <button data-rotate="90" title="Точный сдвиг на +90°">+90°</button>
+            </div>
+            <p class="hint-line">На плане и клавишей R — шаг 45°. Здесь — любой градус.</p>
+            <div class="facing-info" id="house-facing">
+              <span class="tiny-label">НАПРАВЛЕНИЕ ТЕРРАСЫ</span>
+              <strong id="facing">ЮЗ · 215°</strong>
+              <p id="facing-description"></p>
+            </div>
+            <div class="position-title"><span>Положение центра</span><small>от левого верхнего угла схемы</small></div>
+            <div class="position-inputs">
+              <label>X, м<input id="pos-x" type="number" min="-10" max="47" step="0.1" inputmode="decimal"></label>
+              <label>Y, м<input id="pos-y" type="number" min="-10" max="32" step="0.1" inputmode="decimal"></label>
+            </div>
+            <div class="position-inputs" id="object-size">
+              <label>Ширина, м<input id="size-w" type="number" min="2" max="15" step="0.1" inputmode="decimal"></label>
+              <label>Глубина, м<input id="size-h" type="number" min="2" max="15" step="0.1" inputmode="decimal"></label>
+            </div>
+            <label id="height-label" class="height-label">Высота для тени, м<input id="object-height" type="number" min="1" max="12" step="0.1" inputmode="decimal"></label>
+            <div class="nudge-control">
+              <span>Точный сдвиг<br><small>0,25 м за шаг</small></span>
+              <div class="nudge-pad">
+                <button data-nudge="0,-0.25" aria-label="Сдвинуть вверх">↑</button>
+                <button data-nudge="-0.25,0" aria-label="Сдвинуть влево">←</button>
+                <button data-nudge="0,0.25" aria-label="Сдвинуть вниз">↓</button>
+                <button data-nudge="0.25,0" aria-label="Сдвинуть вправо">→</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="path-editor" id="path-editor" hidden>
+            <p class="eyebrow">МАРШРУТ И ПОКРЫТИЕ</p>
+            <h2>Своя дорожка</h2>
+            <p class="path-description" id="path-mode-label">Авто: огибает дом и бытовку</p>
+            <div class="path-width-heading"><label for="path-width">Ширина дорожки</label><output id="path-width-output">1,4 м</output></div>
+            <input id="path-width" type="range" min="0.6" max="4" step="0.1" value="1.4">
+            <div class="path-materials">
+              <button data-material="gravel" aria-pressed="true">Гравий</button>
+              <button data-material="pavers" aria-pressed="false">Плиты</button>
+              <button data-material="wood" aria-pressed="false">Дерево</button>
+            </div>
+            <div class="path-stats" id="path-stats"></div>
+            <div class="path-buttons">
+              <button class="button primary" id="path-draw">⌁ Проложить заново</button>
+              <button class="button light" id="path-auto">Построить автоматически</button>
+            </div>
+            <div class="path-edit-help"><strong>Как редактировать</strong><p>Тяни узлы. «+» на отрезке — добавить поворот. Удалить точку: крестик у выбранного узла, двойной клик по узлу, кнопка ниже или Delete.</p></div>
+            <button id="path-delete-point" class="button light">Удалить выбранную точку</button>
+            <label class="path-visible"><input id="path-visible" type="checkbox" checked> Показывать дорожку</label>
+          </div>
+
+          <div id="warnings" class="warnings" aria-live="polite"></div>
+
+          <div class="variant-card">
+            <form id="save-variant-form" class="save-variant">
+              <label for="variant-name">Сохранить весь план</label>
+              <p>Дом, бытовка, парковка и дорожка — вместе.</p>
+              <div>
+                <input id="variant-name" maxlength="40" placeholder="Название варианта">
+                <button type="submit" class="button primary">Сохранить вариант ↗</button>
+              </div>
+            </form>
+            <button id="reset" class="reset-button">Вернуть весь начальный план</button>
+          </div>
+        </aside>
+      </div>
+
+      <footer class="status-bar">
+        <div class="metrics" id="metrics"></div>
+        <div class="status-note">Зоны — ориентиры модели, не геодезия</div>
+      </footer>
+    </section>
+
+    <section id="panel-compare" role="tabpanel" aria-labelledby="tab-compare" hidden class="overlay-panel">
+      <div class="section-top">
+        <div>
+          <p class="eyebrow">ВАРИАНТЫ</p>
+          <h2>Несколько планов. Один участок.</h2>
+          <p>Сохранённый вариант включает все объекты и дорожку. Свет сравнивается на одну выбранную дату.</p>
+        </div>
+        <button class="button light" id="compare-current">Добавить текущее размещение</button>
+      </div>
+      <div id="comparison" class="comparison-grid"></div>
+      <div class="table-scroll">
+        <table class="comparison-table">
+          <caption>Сравнение геометрии и ориентации</caption>
+          <thead><tr><th>Вариант</th><th>К лесной границе</th><th>Минимум до границы</th><th>Дорожка</th><th>Терраса</th><th>Солнце перед фасадом</th><th>Проверка модели</th></tr></thead>
+          <tbody id="comparison-table-body"></tbody>
+        </table>
+      </div>
+      <div class="compare-footnote">Время «перед фасадом» учитывает только ориентацию террасы и положение солнца. Тень леса и препятствий может сократить фактическое освещение. Тени — сценарий с заданными высотами, без рельефа и облачности.</div>
+    </section>
+
+    <section id="panel-sources" role="tabpanel" aria-labelledby="tab-sources" hidden class="overlay-panel">
+      <div class="section-top">
+        <div>
+          <p class="eyebrow">ИСХОДНЫЕ ДАННЫЕ</p>
+          <h2>Материалы и допущения</h2>
+          <p>Контур и эскиз ГП-01 / РЕВ. 03 от 05.10.2026 — основа модели. Фото и видео площадки 03–07.10.2026 уточняют состояние участка, въезд и лесную кромку.</p>
+        </div>
+        <span class="source-date">03.10 → 07.10.2026</span>
+      </div>
+      <div class="source-gallery">
+        <button class="source-card" data-source="assets/source-boundary.png?v=4" data-title="Контур участка со схемой отступов"><img src="assets/source-boundary.png?v=4" alt="Схема границ: 21,44 м слева, верх 24,89+12,11, низ 24+10, право 15,78+6,09, площадь 750 м²" loading="lazy"><span><strong>01 · Геометрия участка</strong><small>750 м² · отступы 1 м и 3 м на схеме</small></span></button>
+        <button class="source-card" data-source="assets/source-layout.png?v=4" data-title="Эскизный генеральный план ГП-01 / РЕВ. 03"><img src="assets/source-layout.png?v=4" alt="Эскизный генплан Модерн 80: дом у леса, терраса, парковка, бытовка, въезд 5 м" loading="lazy"><span><strong>02 · ГП-01 / РЕВ. 03</strong><small>05.10.2026 · М 1:150 · въезд 5 м</small></span></button>
+        <button class="source-card" data-source="assets/modern-80.png?v=6" data-title="План дома Модерн 80 · AP-01"><img src="assets/modern-80.png?v=6" alt="План дома Модерн 80 по пометкам, 60+20 м², 05.10.2026" loading="lazy"><span><strong>02b · План дома</strong><small>Модерн 80 · AP-01 · 05.10.2026</small></span></button>
+        <button class="source-card" data-source="assets/compass-photo.jpg?v=4" data-title="Компас: лес на юго-западе"><img src="assets/compass-photo.jpg?v=4" alt="Компас 215° ЮЗ, координаты 56°05′54″ С 36°35′42″ В, Акатово парк, г. Клин" loading="lazy"><span><strong>03 · Ориентация</strong><small>215° ЮЗ · Акатово парк, Клин</small></span></button>
+        <button class="source-card" data-source="assets/forest-photo.jpg?v=4" data-title="Подготовка площадки, вид к лесу"><img src="assets/forest-photo.jpg?v=4" alt="Песчаная отсыпка и работы на участке, лес на горизонте" loading="lazy"><span><strong>04 · Площадка к лесу</strong><small>Отсыпка · вид на лесную кромку</small></span></button>
+        <button class="source-card" data-source="assets/photo_2026-10-03_16-43-15.jpg?v=4" data-title="Расчищенный участок 3 октября"><img src="assets/photo_2026-10-03_16-43-15.jpg?v=4" alt="Расчищенный участок с забором, ЛЭП и автомобилем для масштаба" loading="lazy"><span><strong>05 · Расчистка 03.10</strong><small>Забор, опоры ЛЭП, масштаб по авто</small></span></button>
+        <button class="source-card" data-source="assets/photo_2026-10-07_12-20-23.jpg?v=4" data-title="Въезд и дренаж 7 октября"><img src="assets/photo_2026-10-07_12-20-23.jpg?v=4" alt="Работы у въезда: гравий, дренажная труба, разметка флажками" loading="lazy"><span><strong>06 · Въезд 07.10</strong><small>Дренаж / culvert · гравий · разметка</small></span></button>
+      </div>
+      <div class="source-media">
+        <h3>Видео площадки · 07.10.2026</h3>
+        <p>Обход въезда, culvert через канаву, расчищенное пятно и лесная кромка за забором.</p>
+        <div class="video-grid">
+          <figure><video controls preload="metadata" src="assets/video_2026-10-07_12-19-08.mp4"></video><figcaption>Въезд · culvert · флажки разметки</figcaption></figure>
+          <figure><video controls preload="metadata" src="assets/video_2026-10-07_12-19-08%20(2).mp4"></video><figcaption>Обход площадки</figcaption></figure>
+          <figure><video controls preload="metadata" src="assets/video_2026-10-07_12-19-08%20(3).mp4"></video><figcaption>Кромка и забор</figcaption></figure>
+          <figure><video controls preload="metadata" src="assets/video_2026-10-07_12-20-17.mp4"></video><figcaption>Планировка грунта · экскаватор</figcaption></figure>
+        </div>
+      </div>
+      <div class="source-details">
+        <div>
+          <h3>Что взято из материалов</h3>
+          <dl>
+            <div><dt>Адрес / точка</dt><dd>Московская обл., г. Клин, д. Акатово, владение 200, строение Акатово парк тер.</dd></div>
+            <div><dt>Координаты (компас)</dt><dd>56°05′54″ С · 36°35′42″ В</dd></div>
+            <div><dt>Ориентация на лес</dt><dd>ЮЗ · 215°</dd></div>
+            <div><dt>Площадь по схеме</dt><dd>750 м²</dd></div>
+            <div><dt>Верх / низ</dt><dd>24,89 + 12,11 (= 37) / 24 + 10 (= 34) м</dd></div>
+            <div><dt>Левая / правая</dt><dd>21,44 м / 15,78 + 6,09 м</dd></div>
+            <div><dt>Отступы на схеме</dt><dd>1 м и 3 м (ориентиры)</dd></div>
+            <div><dt>Габарит с террасой</dt><dd>10 × 8 м · Модерн 80 · AP-01</dd></div>
+            <div><dt>План дома</dt><dd>modern-80.png · по пометкам 05.10.2026</dd></div>
+            <div><dt>Въезд</dt><dd>5 м у излома · culvert / дренаж на фото</dd></div>
+            <div><dt>Состояние площадки</dt><dd>Расчистка и планировка 03–07.10.2026</dd></div>
+          </dl>
+        </div>
+        <div>
+          <h3>Что восстановлено приблизительно</h3>
+          <p>Излом правой границы оцифрован по схеме. Длины сегментов сверху/снизу на исходнике уточнены; в модели контур остаётся рабочей аппроксимацией, не геодезической привязкой.</p>
+          <p>На фото видны забор вдоль лесной стороны, опоры и провода ЛЭП, жёлтые флажки разметки и работы у въезда (гравий, дренажная труба). Эти объекты на плане не размещены как отдельные сущности — учитывайте их при выборе положения дома и дорожки.</p>
+          <p>Бытовка 6 × 2,4 м и парковка на две машины — допущения эскиза ГП-01. Функциональные зоны (двор, лесная кромка, въезд, буфер) вычисляются из модели.</p>
+          <p>Расстояние «к лесу» — до левой границы участка. Фактический край крон, коммуникации и площадка монтажа по видео/фото могут отличаться от эскиза.</p>
+        </div>
+      </div>
+      <div class="data-actions">
+        <div><strong>Сохрани работу отдельно</strong><p>Изменения, все объекты и свои дорожки остаются в этом браузере. JSON переносит полный план на другое устройство.</p></div>
+        <button class="button light" id="export-json">Скачать варианты (.json)</button>
+        <label class="button light file-button">Загрузить варианты<input type="file" id="import-json" accept="application/json,.json"></label>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <dialog id="source-dialog">
+    <div class="dialog-header"><h2 id="source-title"></h2><button id="close-source" class="icon-button" aria-label="Закрыть изображение">×</button></div>
+    <img id="source-image" alt="">
+  </dialog>
+</body>
+</html>
