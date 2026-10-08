@@ -1,7 +1,7 @@
 // Approximate NOAA fractional-year solar geometry, north-based clockwise azimuth.
 // https://gml.noaa.gov/grad/solcalc/solareqns.PDF
 import {rad,bearing,normAngle,transform,rectPolygon,convexHull,pointInside,FOREST_BEARING} from './geometry.js?v=15';
-export const SOLAR_DEFAULT={date:'2026-06-21',minutes:16*60,lat:56.098333,lng:36.595,tz:3,show:true,shadows:true,forest:true,treeHeight:20};
+export const SOLAR_DEFAULT={date:'2026-06-21',minutes:16*60,lat:56.098333,lng:36.595,tz:3,show:true,shadows:true,forest:true,treeHeight:7};
 const deg=n=>n*180/Math.PI,clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 export function validDate(v){return typeof v==='string'&&/^20\d{2}-\d{2}-\d{2}$/.test(v)&&!Number.isNaN(Date.parse(v))&&new Date(v+'T12:00:00Z').toISOString().slice(0,10)===v;}
 export function cleanSolar(v={}){const s={...SOLAR_DEFAULT};if(validDate(v?.date))s.date=v.date;for(const [k,a,b] of [['minutes',0,1439],['lat',-70,70],['lng',-180,180],['treeHeight',0,40]])if(Number.isFinite(v?.[k])&&v[k]>=a&&v[k]<=b)s[k]=v[k];for(const k of ['show','shadows','forest'])if(typeof v?.[k]==='boolean')s[k]=v[k];return s;}

@@ -1,11 +1,40 @@
 export const PLOT = [[0,0],[37,0],[33.65,15.4],[34,21.44],[0,21.44]];
 export const FOREST_BEARING = 215;
-export const SHED = {x:27,y:3.7,w:6,h:2.4,angle:0};
-export const PARKING = {x:29.5,y:15.95,w:7,h:9.5,angle:0};
+/** Барн-хаус 6×4 (внешний) + веранда 1×4 в габарите; реф. lesuspex.ru */
+export const SHED = {x:27,y:4.2,w:6,h:4,angle:0};
+export const PARKING = {x:29.65,y:17.35,w:6,h:6,angle:-180};
 const slope = [37-33.65, -15.4];
 const sl = Math.hypot(...slope);
 export const GATE = {a:[33.65+slope[0]*5/sl,15.4+slope[1]*5/sl],b:[33.65,15.4]};
 GATE.center = [(GATE.a[0]+GATE.b[0])/2,(GATE.a[1]+GATE.b[1])/2];
+/** Смещение ломаной вправо по ходу (dist>0) с острыми стыками. */
+export function offsetPolyline(points,dist){
+ const n=points.length,dir=i=>{const a=points[i],b=points[i+1],l=Math.hypot(b[0]-a[0],b[1]-a[1])||1;return [(b[0]-a[0])/l,(b[1]-a[1])/l];};
+ return points.map((p,i)=>{
+  const d0=i>0?dir(i-1):dir(0),d1=i<n-1?dir(i):dir(n-2);
+  const n0=[d0[1],-d0[0]],n1=[d1[1],-d1[0]];
+  let mx=n0[0]+n1[0],my=n0[1]+n1[1];const ml=Math.hypot(mx,my);
+  if(ml<1e-6)return [p[0]+n0[0]*dist,p[1]+n0[1]*dist];
+  mx/=ml;my/=ml;const len=Math.min(dist/Math.max(mx*n0[0]+my*n0[1],.2),dist*3);
+  return [p[0]+mx*len,p[1]+my*len];
+ });
+}
+/** Подъездная дорога: внутренняя кромка лежит на правой границе участка и повторяет её излом. */
+export const ROAD_WIDTH = 3.2;
+export const ROAD = (()=>{
+ const [a,b,c]=[PLOT[1],PLOT[2],PLOT[3]];
+ const ext=(p,q,y)=>[p[0]+(q[0]-p[0])*(y-p[1])/(q[1]-p[1]),y];
+ const inner=[ext(b,a,-1.2),b,ext(b,c,23.2)];
+ return {inner,outer:offsetPolyline(inner,ROAD_WIDTH),center:offsetPolyline(inner,ROAD_WIDTH/2),width:ROAD_WIDTH};
+})();
+/** Гравийный въезд у ворот — отдельный объект, не привязан к парковке. */
+function defaultDriveway(){
+ let ix=-(GATE.b[1]-GATE.a[1]),iy=GATE.b[0]-GATE.a[0],il=Math.hypot(ix,iy)||1;
+ ix/=il;iy/=il;if(ix>0){ix=-ix;iy=-iy;}
+ const ang=((Math.atan2(-ix,iy)*180/Math.PI)+180)%360-180;
+ return {x:GATE.center[0]+ix*1.9,y:GATE.center[1]+iy*1.9,w:Math.hypot(GATE.a[0]-GATE.b[0],GATE.a[1]-GATE.b[1])+.4,h:3.6,angle:ang};
+}
+export const DRIVEWAY=defaultDriveway();
 export const PRESETS = [
  {
   id:'forest',name:'У леса',x:9,y:9.5,angle:0,tag:'Кромка',color:'#6b8c73',
@@ -92,14 +121,23 @@ export function metrics(s,buffer=3,objects={shed:SHED,parking:PARKING,pathWidth:
 export function inwardBuffer(d){if(d===0)return PLOT;const lines=PLOT.map((p,i)=>{const q=PLOT[(i+1)%PLOT.length],dx=q[0]-p[0],dy=q[1]-p[1],l=Math.hypot(dx,dy);return {p:[p[0]-dy*d/l,p[1]+dx*d/l],v:[dx,dy]};});return lines.map((line,i)=>{const a=lines[(i+lines.length-1)%lines.length],b=line,den=a.v[0]*b.v[1]-a.v[1]*b.v[0];const delta=[b.p[0]-a.p[0],b.p[1]-a.p[1]],t=(delta[0]*b.v[1]-delta[1]*b.v[0])/den;return [a.p[0]+t*a.v[0],a.p[1]+t*a.v[1]];});}
 export function validState(s){return s&&Number.isFinite(s.x)&&s.x>=-10&&s.x<=47&&Number.isFinite(s.y)&&s.y>=-10&&s.y<=32&&Number.isFinite(s.angle)&&s.angle>=-180&&s.angle<=180;}
 
-export function defaultProject(house=PRESETS[0]){return {house:{x:house.x,y:house.y,angle:house.angle,height:2.7},shed:{...SHED,height:2.5},parking:{...PARKING},path:{mode:'auto',points:[],width:1.4,material:'gravel',visible:true}};}
+/** Начальный план — зафиксированная расстановка от 08.10.2026: дом по центру, парковка у ворот, въезд на границе, дорожка нарисована вручную. */
+export const INITIAL_PLAN = {
+ house:{x:16,y:10,angle:0},
+ driveway:{x:34.12,y:13,w:5,h:3,angle:DRIVEWAY.angle},
+ path:{mode:'manual',points:[[27.33,14.51],[27.35,11.6],[21.55,10.75],[21.55,3.8],[14,3.75]],width:1.4,material:'gravel'},
+ /** Скрытые детали 3D: убраны окно фронтона и по одному окну на южной и северной стенах дома. */
+ hidden3d:['house:window-s-0','house:window-n-1','house:window-gable']
+};
+export function defaultProject(house=INITIAL_PLAN.house){return {house:{x:house.x,y:house.y,angle:house.angle,height:2.7},shed:{...SHED,height:2.6,visible:true},parking:{...PARKING,visible:true},driveway:{...INITIAL_PLAN.driveway,visible:true},path:{...INITIAL_PLAN.path,points:INITIAL_PLAN.path.points.map(p=>[...p]),visible:true},hidden3d:[...INITIAL_PLAN.hidden3d]};}
 export function normalizeProject(value){
  const p=defaultProject();if(!value||typeof value!=='object')return p;
- for(const key of ['house','shed','parking']){const v=value[key];if(v&&validState(v)){p[key].x=v.x;p[key].y=v.y;p[key].angle=normAngle(v.angle);if(key!=='house')for(const d of ['w','h'])if(Number.isFinite(v[d])&&v[d]>=2&&v[d]<=15)p[key][d]=v[d];if(Number.isFinite(v.height)&&v.height>=1&&v.height<=12)p[key].height=v.height;}}
+ for(const key of ['house','shed','parking','driveway']){const v=value[key];if(v&&validState(v)){p[key].x=v.x;p[key].y=v.y;p[key].angle=normAngle(v.angle);if(key!=='house'){for(const d of ['w','h'])if(Number.isFinite(v[d])&&v[d]>=2&&v[d]<=15)p[key][d]=v[d];if(typeof v.visible==='boolean')p[key].visible=v.visible;}if(Number.isFinite(v.height)&&v.height>=1&&v.height<=12)p[key].height=v.height;}}
  if(value.path){const v=value.path;if(Number.isFinite(v.width)&&v.width>=.6&&v.width<=4)p.path.width=v.width;if(['gravel','pavers','wood'].includes(v.material))p.path.material=v.material;if(typeof v.visible==='boolean')p.path.visible=v.visible;if(v.mode==='manual'&&Array.isArray(v.points)&&v.points.length>=2&&v.points.length<=60&&v.points.every(a=>Array.isArray(a)&&a.length===2&&a.every(Number.isFinite)&&a[0]>=-10&&a[0]<=47&&a[1]>=-10&&a[1]<=32)){p.path.mode='manual';p.path.points=v.points.map(a=>[...a]);}}
+ if(Array.isArray(value.hidden3d))p.hidden3d=value.hidden3d.filter(id=>typeof id==='string'&&id.length<80).slice(0,120);
  return p;
 }
-export function validProject(p){return !!p&&['house','shed','parking'].every(k=>validState(p[k]))&&p.path&&Number.isFinite(p.path.width)&&p.path.width>=.6&&p.path.width<=4&&['auto','manual'].includes(p.path.mode)&&Array.isArray(p.path.points)&&p.path.points.length<=60&&(p.path.mode!=='manual'||p.path.points.length>=2)&&p.path.points.every(a=>Array.isArray(a)&&a.length===2&&a.every(Number.isFinite)&&a[0]>=-10&&a[0]<=47&&a[1]>=-10&&a[1]<=32)&&['shed','parking'].every(k=>['w','h'].every(d=>Number.isFinite(p[k][d])&&p[k][d]>=2&&p[k][d]<=15));}
+export function validProject(p){return !!p&&['house','shed','parking'].every(k=>validState(p[k]))&&(!p.driveway||(validState(p.driveway)&&['w','h'].every(d=>Number.isFinite(p.driveway[d])&&p.driveway[d]>=2&&p.driveway[d]<=15)))&&p.path&&Number.isFinite(p.path.width)&&p.path.width>=.6&&p.path.width<=4&&['auto','manual'].includes(p.path.mode)&&Array.isArray(p.path.points)&&p.path.points.length<=60&&(p.path.mode!=='manual'||p.path.points.length>=2)&&p.path.points.every(a=>Array.isArray(a)&&a.length===2&&a.every(Number.isFinite)&&a[0]>=-10&&a[0]<=47&&a[1]>=-10&&a[1]<=32)&&['shed','parking'].every(k=>['w','h'].every(d=>Number.isFinite(p[k][d])&&p[k][d]>=2&&p[k][d]<=15));}
 export function pathPoints(p){if(p.path.mode==='manual')return p.path.points;const r=walkingRoute(p.house,p.shed,p.path.width/2+.5,p.parking);return r?r.points.slice(0,-1):[];}
 export function polylineLength(points){return points.slice(1).reduce((a,p,i)=>a+dist(points[i],p),0);}
 export function polygonInside(poly){return poly.every(p=>pointInside(p))&&poly.every((p,i)=>segmentInside(p,poly[(i+1)%poly.length]));}
@@ -130,8 +168,8 @@ export function functionalZones(p,buffer=3){
 }
 export function sceneMetrics(p,buffer=3){
  const data=metrics(p.house,buffer,{shed:p.shed,parking:p.parking,pathWidth:p.path.width}),footprints={house:footprint(p.house),shed:rectPolygon(p.shed),parking:rectPolygon(p.parking)},names={house:'Дом',shed:'Бытовка',parking:'Парковка'},warnings=[];
- for(const k of Object.keys(footprints))if(!polygonInside(footprints[k]))warnings.push(names[k]+' выходит за границу участка.');
- for(const [a,b] of [['house','shed'],['house','parking'],['shed','parking']])if(overlap(footprints[a],footprints[b]))warnings.push(names[a]+' пересекается с '+({shed:'бытовкой',parking:'парковкой'})[b]+'.');
+ for(const k of Object.keys(footprints)){if(k!=='house'&&p[k].visible===false)continue;if(!polygonInside(footprints[k]))warnings.push(names[k]+' выходит за границу участка.');}
+ for(const [a,b] of [['house','shed'],['house','parking'],['shed','parking']]){if((a!=='house'&&p[a].visible===false)||(b!=='house'&&p[b].visible===false))continue;if(overlap(footprints[a],footprints[b]))warnings.push(names[a]+' пересекается с '+({shed:'бытовкой',parking:'парковкой'})[b]+'.');}
  if(data.inside&&data.min<buffer-.01)warnings.push('Дом заходит в выбранный буфер '+buffer+' м.');
  const points=pathPoints(p),length=polylineLength(points),radius=p.path.width/2;
  if(p.path.visible){
@@ -141,7 +179,7 @@ export function sceneMetrics(p,buffer=3){
    const a=points[i-1],b=points[i],l=dist(a,b);if(l<.001)continue;const nx=-(b[1]-a[1])/l*radius,ny=(b[0]-a[0])/l*radius;
    const strip=[[a[0]+nx,a[1]+ny],[b[0]+nx,b[1]+ny],[b[0]-nx,b[1]-ny],[a[0]-nx,a[1]-ny]];
    for(let j=0;j<=8;j++){const t=j/8,q=[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t];for(const side of [-1,1]){const v=[q[0]+nx*side,q[1]+ny*side];if(!pointInside(v)&&pointSegment(v,GATE.a,GATE.b).distance>radius+.15)outside=true;}}
-   if(overlap(strip,footprints.house)||overlap(strip,footprints.shed))blocked=true;
+   if(overlap(strip,footprints.house)||(p.shed.visible!==false&&overlap(strip,footprints.shed)))blocked=true;
   }
   if(outside)warnings.push('Дорожка с учётом ширины выходит за границу участка.');if(blocked)warnings.push('Дорожка пересекает дом, террасу или бытовку.');
  }

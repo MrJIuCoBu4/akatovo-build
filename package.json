@@ -1,1 +1,1 @@
-{"name":"forest-plot-planner","private":true,"type":"module","scripts":{"check":"node --check dist/app.js && node --check dist/geometry.js && node --check dist/scene.js && node --check dist/solar.js && node --test tests/*.test.mjs"}}
+{"name":"forest-plot-planner","private":true,"type":"module","scripts":{"check":"node --check dist/app.js && node --check dist/geometry.js && node --check dist/scene.js && node --check dist/scene3d.js && node --check dist/solar.js && node --test tests/*.test.mjs"}}

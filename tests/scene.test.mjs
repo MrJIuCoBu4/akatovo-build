@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {defaultProject,sceneMetrics,pathPoints,normalizeProject,validProject,walkingRoute} from '../dist/geometry.js';
+import {PRESETS,defaultProject,sceneMetrics,pathPoints,normalizeProject,validProject,walkingRoute} from '../dist/geometry.js';
 import {SOLAR_DEFAULT,solarDay,solarPosition,facadeLight,shadowPolygon,timeLabel,shadowScene} from '../dist/solar.js';
 import {planMarkup} from '../dist/scene.js';
 test('editable auxiliary objects participate in collisions and automatic path clearance',()=>{
- const p=defaultProject();assert.deepEqual(sceneMetrics(p).warnings,[]);p.shed.x=9;p.shed.y=10;assert(sceneMetrics(p).warnings.some(v=>v.includes('пересекается с бытовкой')));
- const q=defaultProject();q.path.width=3;assert(pathPoints(q).length>=2);assert(!sceneMetrics(q).warnings.some(v=>v.includes('Дорожка пересекает')));
+ const p=defaultProject();assert.deepEqual(sceneMetrics(p).warnings,[]);p.shed.x=p.house.x-3;p.shed.y=p.house.y;assert(sceneMetrics(p).warnings.some(v=>v.includes('пересекается с бытовкой')));
+ const q=defaultProject();q.path.mode='auto';q.path.points=[];q.path.width=3;assert(pathPoints(q).length>=2);assert(!sceneMetrics(q).warnings.some(v=>v.includes('Дорожка пересекает')));
  q.parking.x=36;assert(sceneMetrics(q).warnings.some(v=>v.includes('Парковка выходит')));
 });
 test('manually drawn path length and covering estimate reflect width; invalid paths are flagged',()=>{
@@ -22,7 +22,7 @@ test('solar calculations have sane local times, seasonal heights, and north-base
 });
 test('projected shadows oppose the light and facade hours are distinct from forest shading',()=>{
  const poly=[[0,0],[1,0],[1,1],[0,1]],shadow=shadowPolygon(poly,10,{altitude:45,azimuth:215});assert(Math.max(...shadow.map(p=>p[0]))>10);assert(Math.min(...shadow.map(p=>p[0]))>=0);assert.equal(shadowPolygon(poly,10,{altitude:-1,azimuth:215}).length,0);
- const p=defaultProject(),a=shadowScene(p,SOLAR_DEFAULT);assert(a.front);assert(a.shadeFraction>0);assert(facadeLight(p.house,SOLAR_DEFAULT).minutes>0);
+ const p=defaultProject(PRESETS[0]),a=shadowScene(p,SOLAR_DEFAULT);assert(a.front);assert(a.shadeFraction>0);assert(facadeLight(p.house,SOLAR_DEFAULT).minutes>0);
  const b=shadowScene(p,{...SOLAR_DEFAULT,forest:false});assert(b.shadeFraction<a.shadeFraction);const forestOnly=shadowScene(p,{...SOLAR_DEFAULT,shadows:false,forest:true});assert.equal(forestOnly.polys.length,1);assert.equal(forestOnly.polys[0].kind,'forest');
 });
 test('SVG contains editable object targets and daylight only appears as an explicit solar layer',()=>{

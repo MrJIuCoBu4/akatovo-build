@@ -5,7 +5,7 @@
   <meta name="theme-color" content="#1e3229"><meta name="robots" content="noindex,nofollow">
   <meta name="description" content="Редактор проектирования участка у леса. Зоны, объекты, свет и тени.">
   <title>У леса — редактор участка</title>
-  <link rel="stylesheet" href="styles.css?v=16">
+  <link rel="stylesheet" href="styles.css?v=53">
   <script type="importmap">
   {
     "imports": {
@@ -14,7 +14,7 @@
     }
   }
   </script>
-  <script type="module" src="app.js?v=16"></script>
+  <script type="module" src="app.js?v=68"></script>
 </head>
 <body class="studio">
   <header class="top-bar site-header">
@@ -25,7 +25,6 @@
       <button role="tab" id="tab-sources" aria-controls="panel-sources" aria-selected="false" data-tab="sources">Данные</button>
     </div>
     <div class="header-info">
-      <span class="private-badge"><span aria-hidden="true">▣</span> Приватный</span>
       <span class="header-date">750 м²</span>
       <span class="save-state" id="save-state">Сохраняется в этом браузере</span>
     </div>
@@ -49,8 +48,9 @@
             <p class="rail-label">Объекты</p>
             <div class="object-picker rail-objects">
               <button id="pick-house" data-select="house" aria-pressed="true"><span>⌂</span><strong>Дом</strong><small>Модерн 80</small></button>
-              <button id="pick-shed" data-select="shed" aria-pressed="false"><span>▤</span><strong>Бытовка</strong><small>6 × 2,4 м</small></button>
+              <button id="pick-shed" data-select="shed" aria-pressed="false"><span>▤</span><strong>Бытовка</strong><small>6 × 4 м · барн</small></button>
               <button id="pick-parking" data-select="parking" aria-pressed="false"><span>▱</span><strong>Парковка</strong><small>2 машины</small></button>
+              <button id="pick-driveway" data-select="driveway" aria-pressed="false"><span>▭</span><strong>Въезд</strong><small>гравий у ворот</small></button>
               <button id="pick-path" data-select="path" aria-pressed="false"><span>⌁</span><strong>Дорожка</strong><small id="path-picker-width">1,4 м</small></button>
             </div>
           </div>
@@ -85,6 +85,7 @@
               <div class="view-toggle" role="group" aria-label="Режим вида">
                 <button type="button" id="view-2d" class="view-btn" aria-pressed="true">Сверху</button>
                 <button type="button" id="view-3d" class="view-btn" aria-pressed="false">3D</button>
+                <button type="button" id="edit-3d" class="view-btn" aria-pressed="false" hidden title="Двигать и удалять объекты в 3D">Редакт.</button>
               </div>
               <button class="icon-button" id="undo" aria-label="Отменить изменение" title="Отменить">↶</button>
               <button class="icon-button" id="redo" aria-label="Повторить изменение" title="Повторить">↷</button>
@@ -106,7 +107,30 @@
           <div class="map-wrap" id="map-wrap">
             <svg id="plan" tabindex="0" xmlns="http://www.w3.org/2000/svg" viewBox="-6.5 -5.5 51 32" role="img" aria-label="Редактор участка. Дом, бытовку и парковку можно двигать и поворачивать. Дорожка редактируется точками."></svg>
             <div id="view3d" class="view3d" hidden aria-hidden="true"></div>
-            <button id="selected-badge" class="selected-badge">Дом · настроить ↗</button>
+            <div id="map-compass" class="map-compass" aria-label="Стороны света" hidden>
+              <svg viewBox="0 0 96 96" width="88" height="88" aria-hidden="true">
+                <circle cx="49.5" cy="50.5" r="34" fill="#1e3229" opacity=".07"/>
+                <circle cx="48" cy="48" r="34" fill="#f8f9f0" stroke="#a9ba98" stroke-width="1.2"/>
+                <circle cx="48" cy="48" r="29.6" fill="none" stroke="#c6d1b6" stroke-width=".7"/>
+                <g transform="translate(48 48) rotate(55)">
+                  <g stroke="#b7c5a6" stroke-width=".6">
+                    <line x1="0" y1="-29.6" x2="0" y2="-27.2" transform="rotate(10)"/><line x1="0" y1="-29.6" x2="0" y2="-27.2" transform="rotate(20)"/><line x1="0" y1="-29.6" x2="0" y2="-27.2" transform="rotate(30)"/><line x1="0" y1="-29.6" x2="0" y2="-27.2" transform="rotate(40)"/><line x1="0" y1="-29.6" x2="0" y2="-27.2" transform="rotate(50)"/><line x1="0" y1="-29.6" x2="0" y2="-27.2" transform="rotate(60)"/><line x1="0" y1="-29.6" x2="0" y2="-27.2" transform="rotate(70)"/><line x1="0" y1="-29.6" x2="0" y2="-27.2" transform="rotate(80)"/>
+                    <line x1="0" y1="-29.6" x2="0" y2="-27.2" transform="rotate(100)"/><line x1="0" y1="-29.6" x2="0" y2="-27.2" transform="rotate(110)"/><line x1="0" y1="-29.6" x2="0" y2="-27.2" transform="rotate(120)"/><line x1="0" y1="-29.6" x2="0" y2="-27.2" transform="rotate(130)"/><line x1="0" y1="-29.6" x2="0" y2="-27.2" transform="rotate(140)"/><line x1="0" y1="-29.6" x2="0" y2="-27.2" transform="rotate(150)"/><line x1="0" y1="-29.6" x2="0" y2="-27.2" transform="rotate(160)"/><line x1="0" y1="-29.6" x2="0" y2="-27.2" transform="rotate(170)"/>
+                    <line x1="0" y1="-29.6" x2="0" y2="-27.2" transform="rotate(190)"/><line x1="0" y1="-29.6" x2="0" y2="-27.2" transform="rotate(200)"/><line x1="0" y1="-29.6" x2="0" y2="-27.2" transform="rotate(210)"/><line x1="0" y1="-29.6" x2="0" y2="-27.2" transform="rotate(220)"/><line x1="0" y1="-29.6" x2="0" y2="-27.2" transform="rotate(230)"/><line x1="0" y1="-29.6" x2="0" y2="-27.2" transform="rotate(240)"/><line x1="0" y1="-29.6" x2="0" y2="-27.2" transform="rotate(250)"/><line x1="0" y1="-29.6" x2="0" y2="-27.2" transform="rotate(260)"/>
+                    <line x1="0" y1="-29.6" x2="0" y2="-27.2" transform="rotate(280)"/><line x1="0" y1="-29.6" x2="0" y2="-27.2" transform="rotate(290)"/><line x1="0" y1="-29.6" x2="0" y2="-27.2" transform="rotate(300)"/><line x1="0" y1="-29.6" x2="0" y2="-27.2" transform="rotate(310)"/><line x1="0" y1="-29.6" x2="0" y2="-27.2" transform="rotate(320)"/><line x1="0" y1="-29.6" x2="0" y2="-27.2" transform="rotate(330)"/><line x1="0" y1="-29.6" x2="0" y2="-27.2" transform="rotate(340)"/><line x1="0" y1="-29.6" x2="0" y2="-27.2" transform="rotate(350)"/>
+                  </g>
+                  <g stroke="#5f7a5a" stroke-width="1.1"><line x1="0" y1="-29.6" x2="0" y2="-25.2"/><line x1="0" y1="-29.6" x2="0" y2="-25.2" transform="rotate(90)"/><line x1="0" y1="-29.6" x2="0" y2="-25.2" transform="rotate(180)"/><line x1="0" y1="-29.6" x2="0" y2="-25.2" transform="rotate(270)"/></g>
+                  <g><path d="M0-15L-4.4-4.4L0 0Z" fill="#c9d5b9" transform="rotate(45)"/><path d="M0-15L4.4-4.4L0 0Z" fill="#e9eee0" transform="rotate(45)"/><path d="M0-15L-4.4-4.4L0 0Z" fill="#c9d5b9" transform="rotate(135)"/><path d="M0-15L4.4-4.4L0 0Z" fill="#e9eee0" transform="rotate(135)"/><path d="M0-15L-4.4-4.4L0 0Z" fill="#c9d5b9" transform="rotate(225)"/><path d="M0-15L4.4-4.4L0 0Z" fill="#e9eee0" transform="rotate(225)"/><path d="M0-15L-4.4-4.4L0 0Z" fill="#c9d5b9" transform="rotate(315)"/><path d="M0-15L4.4-4.4L0 0Z" fill="#e9eee0" transform="rotate(315)"/></g>
+                  <g><path d="M0-23.1L-6.8-6.8L0 0Z" fill="#8fa680" transform="rotate(90)"/><path d="M0-23.1L6.8-6.8L0 0Z" fill="#dbe4ce" transform="rotate(90)"/><path d="M0-23.1L-6.8-6.8L0 0Z" fill="#8fa680" transform="rotate(180)"/><path d="M0-23.1L6.8-6.8L0 0Z" fill="#dbe4ce" transform="rotate(180)"/><path d="M0-23.1L-6.8-6.8L0 0Z" fill="#8fa680" transform="rotate(270)"/><path d="M0-23.1L6.8-6.8L0 0Z" fill="#dbe4ce" transform="rotate(270)"/></g>
+                  <path d="M0-25.8L-7.5-7.5L0 0Z" fill="#2f4a3c"/><path d="M0-25.8L7.5-7.5L0 0Z" fill="#6f8b69"/>
+                  <circle r="5.1" fill="#fbfbf4" stroke="#5f7a5a" stroke-width="1"/><circle r="2.4" fill="#b78e56"/>
+                </g>
+                <text x="79.1" y="26.2" text-anchor="middle" dominant-baseline="middle" font-size="11" font-weight="700" fill="#253e35">С</text>
+                <text x="69.8" y="79.1" text-anchor="middle" dominant-baseline="middle" font-size="9.5" font-weight="600" fill="#7f9272">В</text>
+                <text x="16.9" y="69.8" text-anchor="middle" dominant-baseline="middle" font-size="9.5" font-weight="600" fill="#7f9272">Ю</text>
+                <text x="26.2" y="16.9" text-anchor="middle" dominant-baseline="middle" font-size="9.5" font-weight="600" fill="#7f9272">З</text>
+              </svg>
+            </div>
             <div class="map-corner">750 м² · модель</div>
             <div class="map-zoom">
               <button id="zoom-out" aria-label="Уменьшить план">−</button>
@@ -123,7 +147,7 @@
               <span><i class="swatch shadow"></i>Тень</span>
               <span><i class="swatch zone"></i>Зоны</span>
             </div>
-            <span class="map-hint" id="map-hint">Выбор · перетаскивание · круг — поворот</span>
+            <span class="map-hint" id="map-hint">Колесо — зум · пробел+тяни — сдвиг · круг — поворот</span>
           </div>
 
           <section class="solar-card" id="solar-card" aria-label="Солнце и тени">
@@ -138,13 +162,13 @@
                 <button data-season="winter">Зима</button>
                 <button data-season="today">Сегодня</button>
               </div>
-              <input id="solar-date" type="date" min="2000-01-01" max="2099-12-31" value="2026-06-21" aria-label="Дата для расчёта солнца">
+              <input id="solar-date" type="text" readonly inputmode="none" autocomplete="off" spellcheck="false" value="2026-06-21" aria-label="Дата для расчёта солнца" aria-haspopup="dialog" aria-expanded="false">
             </div>
             <div class="solar-timeline" id="solar-timeline"></div>
             <div class="solar-scrubber">
               <button id="solar-play" aria-label="Показать движение солнца за день">▶</button>
               <input id="solar-time" type="range" min="0" max="1435" step="5" value="960" aria-label="Время суток по Москве">
-              <input id="solar-clock" type="time" step="300" value="16:00" aria-label="Точное время по Москве">
+              <input id="solar-clock" type="text" readonly inputmode="none" autocomplete="off" spellcheck="false" value="16:00" aria-label="Точное время по Москве" aria-haspopup="dialog" aria-expanded="false">
             </div>
             <div class="solar-facts" id="solar-facts"></div>
             <div class="solar-meaning" id="solar-meaning"></div>
@@ -156,7 +180,7 @@
                 <label><input id="solar-shadows" type="checkbox" checked> Тени зданий</label>
                 <label><input id="solar-forest" type="checkbox" checked> Тень леса</label>
               </div>
-              <label class="tree-height-control">Высота леса, м <input id="tree-height" type="range" min="0" max="40" step="1" value="20"><output id="tree-height-output">20</output></label>
+              <label class="tree-height-control">Высота леса, м <input id="tree-height" type="range" min="0" max="40" step="1" value="7"><output id="tree-height-output">7</output></label>
               <p>Облачность, рельеф и форма крон не учитываются. «Перед фасадом» означает направление света, а не фактическую длительность инсоляции. <a href="https://gml.noaa.gov/grad/solcalc/solareqns.PDF" target="_blank" rel="noopener noreferrer">Метод расчёта ↗</a></p>
             </details>
           </section>
@@ -241,7 +265,10 @@
                 <button type="submit" class="button primary">Сохранить вариант ↗</button>
               </div>
             </form>
-            <button id="reset" class="reset-button">Вернуть весь начальный план</button>
+            <div class="baseline-row">
+              <button id="save-baseline" class="baseline-button" type="button" title="Текущая расстановка станет точкой возврата для кнопки «Вернуть начальный план»">Сохранить как начальный план</button>
+              <button id="reset" class="reset-button" type="button">Вернуть начальный план</button>
+            </div>
           </div>
         </aside>
       </div>
@@ -277,30 +304,9 @@
         <div>
           <p class="eyebrow">ИСХОДНЫЕ ДАННЫЕ</p>
           <h2>Материалы и допущения</h2>
-          <p>Контур и эскиз ГП-01 / РЕВ. 03 от 05.10.2026 — основа модели. Фото и видео площадки 03–07.10.2026 уточняют состояние участка, въезд и лесную кромку.</p>
+          <p>Контур и эскиз ГП-01 / РЕВ. 03 от 05.10.2026 — основа модели. Состояние площадки, въезд и лесная кромка уточнялись по полевым материалам 03–07.10.2026 (в репозиторий не включены).</p>
         </div>
         <span class="source-date">03.10 → 07.10.2026</span>
-      </div>
-      <div class="source-gallery">
-        <button class="source-card" data-source="assets/schema-granic-uchastka.png?v=1" data-title="Контур участка со схемой отступов"><img src="assets/schema-granic-uchastka.png?v=1" alt="Схема границ: 21,44 м слева, верх 24,89+12,11, низ 24+10, право 15,78+6,09, площадь 750 м²" loading="lazy"><span><strong>01 · Геометрия участка</strong><small>750 м² · отступы 1 м и 3 м на схеме</small></span></button>
-        <button class="source-card" data-source="assets/genplan-gp01-rev03.png?v=1" data-title="Эскизный генеральный план ГП-01 / РЕВ. 03"><img src="assets/genplan-gp01-rev03.png?v=1" alt="Эскизный генплан Модерн 80: дом у леса, терраса, парковка, бытовка, въезд 5 м" loading="lazy"><span><strong>02 · ГП-01 / РЕВ. 03</strong><small>05.10.2026 · М 1:150 · въезд 5 м</small></span></button>
-        <button class="source-card" data-source="assets/plan-doma-modern-80.png?v=1" data-title="План дома Модерн 80 · AP-01"><img src="assets/plan-doma-modern-80.png?v=1" alt="План дома Модерн 80 по пометкам, 60+20 м², 05.10.2026" loading="lazy"><span><strong>02b · План дома</strong><small>Модерн 80 · AP-01 · 05.10.2026</small></span></button>
-        <button class="source-card" data-source="assets/kompas-orientaciya-215.jpg?v=1" data-title="Компас: лес на юго-западе"><img src="assets/kompas-orientaciya-215.jpg?v=1" alt="Компас 215° ЮЗ, координаты 56°05′54″ С 36°35′42″ В, Акатово парк, г. Клин" loading="lazy"><span><strong>03 · Ориентация</strong><small>215° ЮЗ · Акатово парк, Клин</small></span></button>
-        <button class="source-card" data-source="assets/foto-ploshchadka-k-lesu.jpg?v=1" data-title="Подготовка площадки, вид к лесу"><img src="assets/foto-ploshchadka-k-lesu.jpg?v=1" alt="Песчаная отсыпка и работы на участке, лес на горизонте" loading="lazy"><span><strong>04 · Площадка к лесу</strong><small>Отсыпка · вид на лесную кромку</small></span></button>
-        <button class="source-card" data-source="assets/foto-raschistka-2026-10-03.jpg?v=1" data-title="Расчищенный участок 3 октября"><img src="assets/foto-raschistka-2026-10-03.jpg?v=1" alt="Расчищенный участок с забором, ЛЭП и автомобилем для масштаба" loading="lazy"><span><strong>05 · Расчистка 03.10</strong><small>Забор, опоры ЛЭП, масштаб по авто</small></span></button>
-        <button class="source-card" data-source="assets/foto-vezd-drenazh-2026-10-07.jpg?v=1" data-title="Въезд и дренаж 7 октября"><img src="assets/foto-vezd-drenazh-2026-10-07.jpg?v=1" alt="Работы у въезда: гравий, дренажная труба, разметка флажками" loading="lazy"><span><strong>06 · Въезд 07.10</strong><small>Дренаж / culvert · гравий · разметка</small></span></button>
-        <button class="source-card" data-source="assets/karta-kadastra-akatovo.png?v=1" data-title="Кадастровая карта: Акатово, окружение участка"><img src="assets/karta-kadastra-akatovo.png?v=1" alt="Кадастровая карта посёлка: участки, улицы Полевая, Парковая, Садовая" loading="lazy"><span><strong>07 · Кадастр · обзор</strong><small>Акатово · соседние участки</small></span></button>
-        <button class="source-card" data-source="assets/karta-kadastra-kontur-uchastka.png?v=1" data-title="Кадастровая карта: контур владения"><img src="assets/karta-kadastra-kontur-uchastka.png?v=1" alt="Кадастровая карта с выделенным контуром участка (владение 200 и смежные)" loading="lazy"><span><strong>08 · Кадастр · контур</strong><small>Выделение границ владения</small></span></button>
-      </div>
-      <div class="source-media">
-        <h3>Видео площадки · 07.10.2026</h3>
-        <p>Обход въезда, culvert через канаву, расчищенное пятно и лесная кромка за забором.</p>
-        <div class="video-grid">
-          <figure><video controls preload="metadata" src="assets/video-vezd-culvert-2026-10-07.mp4"></video><figcaption>Въезд · culvert · флажки разметки</figcaption></figure>
-          <figure><video controls preload="metadata" src="assets/video-obhod-ploshchadki-2026-10-07.mp4"></video><figcaption>Обход площадки</figcaption></figure>
-          <figure><video controls preload="metadata" src="assets/video-kromka-zabor-2026-10-07.mp4"></video><figcaption>Кромка и забор</figcaption></figure>
-          <figure><video controls preload="metadata" src="assets/video-planirovka-grunta-2026-10-07.mp4"></video><figcaption>Планировка грунта · экскаватор</figcaption></figure>
-        </div>
       </div>
       <div class="source-details">
         <div>
@@ -314,17 +320,17 @@
             <div><dt>Левая / правая</dt><dd>21,44 м / 15,78 + 6,09 м</dd></div>
             <div><dt>Отступы на схеме</dt><dd>1 м и 3 м (ориентиры)</dd></div>
             <div><dt>Габарит с террасой</dt><dd>10 × 8 м · Модерн 80 · AP-01</dd></div>
-            <div><dt>План дома</dt><dd>plan-doma-modern-80.png · по пометкам 05.10.2026</dd></div>
-            <div><dt>Въезд</dt><dd>5 м у излома · culvert / дренаж на фото</dd></div>
+            <div><dt>План дома</dt><dd>Модерн 80 · по пометкам 05.10.2026</dd></div>
+            <div><dt>Въезд</dt><dd>5 м у излома · culvert / дренаж</dd></div>
             <div><dt>Состояние площадки</dt><dd>Расчистка и планировка 03–07.10.2026</dd></div>
           </dl>
         </div>
         <div>
           <h3>Что восстановлено приблизительно</h3>
           <p>Излом правой границы оцифрован по схеме. Длины сегментов сверху/снизу на исходнике уточнены; в модели контур остаётся рабочей аппроксимацией, не геодезической привязкой.</p>
-          <p>На фото видны забор вдоль лесной стороны, опоры и провода ЛЭП, жёлтые флажки разметки и работы у въезда (гравий, дренажная труба). Эти объекты на плане не размещены как отдельные сущности — учитывайте их при выборе положения дома и дорожки.</p>
-          <p>Бытовка 6 × 2,4 м и парковка на две машины — допущения эскиза ГП-01. Функциональные зоны (двор, лесная кромка, въезд, буфер) вычисляются из модели.</p>
-          <p>Расстояние «к лесу» — до левой границы участка. Фактический край крон, коммуникации и площадка монтажа по видео/фото могут отличаться от эскиза.</p>
+          <p>На площадке есть забор вдоль лесной стороны, опоры и провода ЛЭП, разметка и работы у въезда (гравий, дренажная труба). Эти объекты на плане не размещены как отдельные сущности — учитывайте их при выборе положения дома и дорожки.</p>
+          <p>Бытовка «Барн Хаус» 6 × 4 м (веранда 1 × 4 м) и парковка на две машины. Функциональные зоны (двор, лесная кромка, въезд, буфер) вычисляются из модели.</p>
+          <p>Расстояние «к лесу» — до левой границы участка. Фактический край крон, коммуникации и площадка монтажа могут отличаться от эскиза.</p>
         </div>
       </div>
       <div class="data-actions">
@@ -335,10 +341,8 @@
     </section>
   </main>
 
+  <div id="date-pop" class="picker-pop" role="dialog" aria-label="Выбор даты" hidden></div>
+  <div id="time-pop" class="picker-pop" role="dialog" aria-label="Выбор времени" hidden></div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <dialog id="source-dialog">
-    <div class="dialog-header"><h2 id="source-title"></h2><button id="close-source" class="icon-button" aria-label="Закрыть изображение">×</button></div>
-    <img id="source-image" alt="">
-  </dialog>
 </body>
 </html>
