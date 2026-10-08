@@ -1,9 +1,91 @@
-# У леса — интерактивный план
+# У леса — планировщик участка Акатово
 
-Buildless static app. Entry point: `dist/index.html`. No external dependencies, analytics, or network requests in the application. Hosted with owner-only Sites access.
+Интерактивный студийный редактор участка **«Акатово парк»** (Московская обл., г. Клин, д. Акатово, владение 200): размещение дома **Модерн 80**, бытовки, парковки и дорожки, сравнение вариантов, оценка солнца и теней, просмотр сверху (SVG) и в 3D (Three.js).
 
-Source basis: boundary diagram with segmented edge lengths and 1 m / 3 m setback guides; sketch general plan **ГП-01 / РЕВ. 03** dated 5 October 2026; compass screenshot (215° SW) with address Московская обл., г. Клин, д. Акатово, владение 200, строение Акатово парк тер. and coordinates 56°05′54″ N / 36°35′42″ E; site photos and videos from 3–7 October 2026 (cleared pad, forest edge fence, access culvert/drainage, utility poles). Polygon digitized from drawing, not surveyed. Default placement is the forest-side sketch.
+Репозиторий: [github.com/MrJIuCoBu4/akatovo-build](https://github.com/MrJIuCoBu4/akatovo-build).
 
-`geometry.js` handles rotated footprints, all object positions/sizes, collisions, editable paths, automatic routing, and functional zone overlays. `solar.js` implements approximate NOAA fractional-year solar geometry at the compass-photo location (56.098333 N, 36.595 E), using Moscow UTC+3 independently of the browser timezone. `scene.js` renders the SVG scene, selected-object controls, paths, sun direction, and projected box/forest-strip shadows. `app.js` handles all editing, persistence, comparison and exports. Version 1 browser data and JSON migrate to version 2 without dropping saved variants. Shadows assume flat ground, specified box heights, and a uniform forest strip; no measured crown geometry, clouds, or relief. Facade-facing hours are directional, not an insolation certification. Local variants remain in browser localStorage, with JSON portability.
+## Зачем это нужно
 
-Run `npm run check`. Browser QA is unavailable in this managed environment; use the native deployment result for hosting verification. Setbacks, contours, routes, tree positions and parking remain conceptual. No regulatory compliance is asserted.
+Проект помогает на ранней стадии выбрать посадку дома у лесной кромки: насколько близко к лесу, куда смотрит терраса, хватает ли места для двора, парковки и прохода от ворот. Это **эскизная модель**, а не геодезия и не проект для согласований.
+
+## Возможности
+
+- **План сверху** — векторный SVG с зонами, размерами, компасом, планом этажа Модерн 80.
+- **3D-вид** — Three.js: объёмы дома, бытовки, парковки, дорожки, полоса леса; камера OrbitControls.
+- **Объекты** — дом, бытовка и парковка: перетаскивание, поворот (на плане шаг 45°, в свойствах — любой градус), размеры и высота для тени.
+- **Дорожка** — автомаршрут вокруг дома и бытовки или ручная отрисовка с узлами.
+- **Четыре стартовых сценария** — у леса, терраса к югу, двор перед террасой, ближе к въезду; у каждого — развёрнутое «зачем» и компромисс.
+- **Солнце** — приблизительный расчёт по координатам компаса, шкала дня, тени зданий и леса, часы «перед фасадом».
+- **Сравнение вариантов** — пресеты и свои сохранения бок о бок.
+- **Импорт / экспорт** — JSON вариантов и SVG плана; данные живут в `localStorage` браузера.
+
+## Быстрый старт
+
+```powershell
+py -m http.server 8000 --bind 127.0.0.1 --directory dist
+```
+
+Откройте http://127.0.0.1:8000/  
+Подробнее — в [QUICKSTART.md](QUICKSTART.md).
+
+Проверки (нужен Node.js, без `npm install`):
+
+```sh
+npm run check
+```
+
+## Структура проекта
+
+| Путь | Назначение |
+|------|------------|
+| `dist/index.html` | Интерфейс, вкладки, галерея исходников |
+| `dist/styles.css` | Оформление студии |
+| `dist/app.js` | Редактирование, сохранение, 2D/3D, импорт/экспорт |
+| `dist/geometry.js` | Контур участка, объекты, дорожка, коллизии, зоны |
+| `dist/scene.js` | SVG-сцена, тени, план этажа |
+| `dist/scene3d.js` | Three.js 3D-вид |
+| `dist/solar.js` | Положение солнца (МСК, координаты компаса) |
+| `dist/assets/` | Схемы, фото, видео, кадастровые карты |
+| `tests/` | Автотесты геометрии и интерфейса |
+| `package.json` | Скрипт `npm run check` |
+
+Приложение **buildless**: ES-модули в браузере, внешней сборки нет. В 3D подключается Three.js с CDN.
+
+## Исходные материалы (`dist/assets/`)
+
+Имена файлов описывают содержание:
+
+| Файл | Содержание |
+|------|------------|
+| `schema-granic-uchastka.png` | Схема границ и отступов 1/3 м, 750 м² |
+| `genplan-gp01-rev03.png` | Эскизный генплан ГП-01 / РЕВ. 03 (05.10.2026) |
+| `plan-doma-modern-80.png` | План дома Модерн 80 · AP-01 |
+| `kompas-orientaciya-215.jpg` | Компас: лес ЮЗ 215°, координаты участка |
+| `foto-ploshchadka-k-lesu.jpg` | Площадка, вид к лесу |
+| `foto-raschistka-2026-10-03.jpg` | Расчистка 03.10.2026 |
+| `foto-vezd-drenazh-2026-10-07.jpg` | Въезд и дренаж 07.10.2026 |
+| `karta-kadastra-akatovo.png` | Кадастровая карта — обзор посёлка |
+| `karta-kadastra-kontur-uchastka.png` | Кадастр — выделенный контур владения |
+| `video-vezd-culvert-2026-10-07.mp4` | Видео: въезд, culvert, разметка |
+| `video-obhod-ploshchadki-2026-10-07.mp4` | Видео: обход площадки |
+| `video-kromka-zabor-2026-10-07.mp4` | Видео: кромка и забор |
+| `video-planirovka-grunta-2026-10-07.mp4` | Видео: планировка грунта |
+
+Адрес и точка на компасе: **56°05′54″ С · 36°35′42″ В** (56,098333° / 36,595°), время модели — **МСК (UTC+3)**.
+
+## Модель участка
+
+- Площадь по схеме ≈ **750 м²**, левая сторона к лесу ≈ **21,44 м**.
+- Дом **Модерн 80**: жилой объём 60 м² + терраса 20 м², габарит с террасой 10 × 8 м.
+- Бытовка 6 × 2,4 м и парковка на две машины — допущения эскиза ГП-01.
+- Контур оцифрован по чертежу, **не** по межевому плану.
+- Тени: ровная земля, заданные высоты, равномерная полоса леса; без крон, облаков и рельефа.
+- «Часы перед фасадом» — направление света, не сертификация инсоляции.
+
+## Приватность
+
+Нет серверной части, аналитики и обязательных сетевых запросов приложения (кроме CDN Three.js в режиме 3D). Варианты хранятся в браузере; JSON переносит их на другое устройство. В репозитории есть личные фото и схемы участка — учитывайте это при публикации.
+
+## Точность и ответственность
+
+Отступы, маршруты, деревья и парковка — **концептуальные**. Проект не утверждает соответствие нормам, ПЗЗ или фактической геодезии. Допущения продублированы во вкладке «Данные» интерфейса.
